@@ -3,7 +3,6 @@ package downloader
 import (
 	"context"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,28 +10,54 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/decipher"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
-	"github.com/AlexKLWS/youtube-audio-stream/models"
-	videoinfo "github.com/AlexKLWS/youtube-audio-stream/video_info"
+	"github.com/AlexKLWS/youtube-audio-stream/utils"
+	"github.com/AlexKLWS/youtube-audio-stream/videoinfo"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
 
 // Downloader offers high level functions to download videos into files
 type Downloader struct {
-	client    *client.Client
+	url       string
+	video     *videoinfo.VideoInfo
+	client    client.Client
 	OutputDir string // optional directory to store the files
 }
 
 // New creates a new downloader with provided client
-func New(c *client.Client) *Downloader {
-	return &Downloader{client: c}
+func New(c client.Client, url string) *Downloader {
+	return &Downloader{client: c, url: url}
 }
 
-func (dl *Downloader) getOutputFile(v *videoinfo.VideoInfo, format *models.Format, outputFile string) (string, error) {
+//DownloadVideo returns a download handle
+func (dl *Downloader) DownloadVideo(ctx context.Context, outputFilename string) error {
+	v, err := videoinfo.Fetch(ctx, dl.client, dl.url)
+	if err != nil {
+		return err
+	}
+	dl.video = v
+	v.SelectFormat()
+
+	destFile, err := dl.getOutputFile(outputFilename)
+	if err != nil {
+		return err
+	}
+
+	// Create output file
+	out, err := os.Create(destFile)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	return dl.videoDLWorker(ctx, out)
+}
+
+func (dl *Downloader) getOutputFile(outputFile string) (string, error) {
 
 	if outputFile == "" {
-		outputFile = SanitizeFilename(v.Title)
-		outputFile += pickIdealFileExtension(format.MimeType)
+		outputFile = utils.SanitizeFilename(dl.video.Title)
+		outputFile += dl.video.FileFormat
 	}
 
 	if dl.OutputDir != "" {
@@ -45,26 +70,8 @@ func (dl *Downloader) getOutputFile(v *videoinfo.VideoInfo, format *models.Forma
 	return outputFile, nil
 }
 
-//Download : Starting download video by arguments.
-func (dl *Downloader) Download(ctx context.Context, v *videoinfo.VideoInfo, format *models.Format, outputFile string) error {
-	destFile, err := dl.getOutputFile(v, format, outputFile)
-	if err != nil {
-		return err
-	}
-
-	// Create output file
-	out, err := os.Create(destFile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	dl.logf("Download to file=%s", destFile)
-	return dl.videoDLWorker(ctx, out, v, format)
-}
-
-func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *videoinfo.VideoInfo, format *models.Format) error {
-	resp, err := dl.getStream(ctx, video, format)
+func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File) error {
+	resp, err := dl.getStream(ctx)
 	if err != nil {
 		return err
 	}
@@ -79,6 +86,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *vi
 	bar := progress.AddBar(
 		int64(prog.contentLength),
 
+		mpb.BarStyle("╢▌▌░╟"),
 		mpb.PrependDecorators(
 			decor.CountersKibiByte("% .2f / % .2f"),
 			decor.Percentage(decor.WCSyncSpace),
@@ -102,8 +110,8 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *vi
 }
 
 // GetStreamContext returns the HTTP response for a specific format with a context
-func (dl *Downloader) getStream(ctx context.Context, video *videoinfo.VideoInfo, format *models.Format) (*http.Response, error) {
-	url, err := dl.getStreamURL(ctx, video, format)
+func (dl *Downloader) getStream(ctx context.Context) (*http.Response, error) {
+	url, err := dl.getStreamURL(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -111,21 +119,15 @@ func (dl *Downloader) getStream(ctx context.Context, video *videoinfo.VideoInfo,
 	return dl.client.HTTPGet(ctx, url)
 }
 
-func (dl *Downloader) getStreamURL(ctx context.Context, video *videoinfo.VideoInfo, format *models.Format) (string, error) {
-	if format.URL != "" {
-		return format.URL, nil
+func (dl *Downloader) getStreamURL(ctx context.Context) (string, error) {
+	if dl.video.Format.URL != "" {
+		return dl.video.Format.URL, nil
 	}
 
-	cipher := format.Cipher
+	cipher := dl.video.Format.Cipher
 	if cipher == "" {
 		return "", exerrors.ErrCipherNotFound
 	}
 
-	return decipher.FormURLFromCipher(ctx, dl.client, video.ID, cipher)
-}
-
-func (dl *Downloader) logf(format string, v ...interface{}) {
-	if !dl.client.Silent {
-		log.Printf(format, v...)
-	}
+	return decipher.FormURLFromCipher(ctx, dl.client, dl.video.ID, cipher)
 }

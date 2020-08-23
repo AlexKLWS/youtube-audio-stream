@@ -2,7 +2,7 @@ package decipher
 
 //
 // Pretty much entire decipher logic is borrowed from https://github.com/kkdai/youtube
-// with minor alterations
+// I just made a couple of fixes and adjustments here and there
 //
 
 import (
@@ -18,7 +18,7 @@ import (
 )
 
 // FormURLFromCipher deciphers the cipher and forms an URL
-func FormURLFromCipher(ctx context.Context, c *client.Client, videoID string, cipher string) (string, error) {
+func FormURLFromCipher(ctx context.Context, c client.Client, videoID string, cipher string) (string, error) {
 	queryParams, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -91,7 +91,7 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func parseDecipherOps(ctx context.Context, client *client.Client, videoID string) (operations []operation, err error) {
+func parseDecipherOps(ctx context.Context, client client.Client, videoID string) (operations []operation, err error) {
 	if videoID == "" {
 		return nil, errors.New("video id is empty")
 	}

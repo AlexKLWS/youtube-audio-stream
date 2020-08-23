@@ -1,6 +1,7 @@
-package downloader
+package utils
 
 import (
+	"log"
 	"mime"
 	"regexp"
 )
@@ -27,13 +28,17 @@ var canonicals = map[string]string{
 	"video/mp4":        ".mp4",
 	"video/ogg":        ".ogv",
 	"video/mp2t":       ".ts",
+	"audio/mp4":        ".m4a",
+	"audio/webm":       ".webm",
 }
 
-func pickIdealFileExtension(mediaType string) string {
+func PickIdealFileExtension(mediaType string) string {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
 		return defaultExtension
 	}
+
+	log.Printf("mediaType: ", mediaType)
 
 	if extension, ok := canonicals[mediaType]; ok {
 		return extension

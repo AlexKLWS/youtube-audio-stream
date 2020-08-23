@@ -17,15 +17,17 @@ import (
 )
 
 type VideoInfo struct {
-	ID       string
-	Title    string
-	Author   string
-	Duration time.Duration
-	Formats  FormatList
+	ID                  string
+	Title               string
+	Author              string
+	Duration            time.Duration
+	AllAvailableFormats FormatList
+	Format              *models.Format
+	FileFormat          string
 }
 
 // Fetch fetches video info metadata with a context
-func Fetch(ctx context.Context, c *client.Client, url string) (*VideoInfo, error) {
+func Fetch(ctx context.Context, c client.Client, url string) (*VideoInfo, error) {
 	id, err := utils.ExtractVideoID(url)
 	if err != nil {
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
@@ -52,6 +54,22 @@ func Fetch(ctx context.Context, c *client.Client, url string) (*VideoInfo, error
 	v.ID = id
 
 	return v, nil
+}
+
+// SelectFormat iterates over all available video formats and sets Format variable the most suitable one
+func (v *VideoInfo) SelectFormat() {
+	var audioOnlyFormats FormatList
+	for _, f := range v.AllAvailableFormats {
+		if checkIfAudio(f) {
+			audioOnlyFormats = append(audioOnlyFormats, f)
+		}
+	}
+	if len(audioOnlyFormats) != 0 {
+		if bestFormat := audioOnlyFormats.FindByItag(140); bestFormat != nil {
+			v.Format = bestFormat
+			v.FileFormat = utils.PickIdealFileExtension(bestFormat.MimeType)
+		}
+	}
 }
 
 func parseVideoInfoString(info string) (v *VideoInfo, err error) {
@@ -97,11 +115,15 @@ func parseVideoInfoString(info string) (v *VideoInfo, err error) {
 	}
 
 	// Assign Streams
-	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
+	v.AllAvailableFormats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
 
-	if len(v.Formats) == 0 {
+	if len(v.AllAvailableFormats) == 0 {
 		return nil, errors.New("no formats found in the server's answer")
 	}
 
 	return
+}
+
+func checkIfAudio(f models.Format) bool {
+	return f.FPS == 0 && f.Width == 0 && f.Height == 0
 }
