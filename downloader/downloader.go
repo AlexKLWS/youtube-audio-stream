@@ -93,7 +93,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File) error {
 		),
 		mpb.AppendDecorators(
 			decor.EwmaETA(decor.ET_STYLE_GO, 90),
-			decor.Name(" ] "),
+			decor.Name(" | "),
 			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
 		),
 	)
