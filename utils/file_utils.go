@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"log"
 	"mime"
 	"regexp"
 )
@@ -37,8 +36,6 @@ func PickIdealFileExtension(mediaType string) string {
 	if err != nil {
 		return defaultExtension
 	}
-
-	log.Printf("mediaType: ", mediaType)
 
 	if extension, ok := canonicals[mediaType]; ok {
 		return extension
