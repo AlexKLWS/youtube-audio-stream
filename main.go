@@ -10,7 +10,6 @@ import (
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
-	videoinfo "github.com/AlexKLWS/youtube-audio-stream/video_info"
 	"github.com/spf13/cobra"
 )
 
@@ -42,12 +41,10 @@ func run(url string) {
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}).DialContext
+
 	c := client.New(httpTransport)
 	ctx := context.Background()
-	v, err := videoinfo.Fetch(ctx, c, url)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%+v", err)
-	}
-	d := downloader.New(c)
-	d.Download(ctx, v, &v.Formats[0], "lmao.mp4")
+
+	d := downloader.New(c, url)
+	d.DownloadVideo(ctx, "")
 }
