@@ -1,8 +1,12 @@
 package main
 
-import "github.com/AlexKLWS/youtube-audio-stream/cmd"
+import (
+	"github.com/AlexKLWS/youtube-audio-stream/cmd"
+	"github.com/AlexKLWS/youtube-audio-stream/config"
+)
 
 func main() {
-	// config.InitializeViper()
+	config.InitializeViper()
+
 	cmd.Execute()
 }

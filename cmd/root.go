@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
+	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
 	"github.com/spf13/cobra"
 )
 
@@ -47,9 +48,14 @@ func run(url string) {
 		KeepAlive: 30 * time.Second,
 	}).DialContext
 
-	c := client.NewSilent(httpTransport)
+	c := client.New(httpTransport)
 	ctx := context.Background()
 
 	d := downloader.New(c, url)
-	d.DownloadVideo(ctx, outputFilename)
+	d.DownloadVideo(ctx)
+	outputDir := d.GetVideoID()
+	sourceFilePath := d.GetVideoFilePath()
+
+	t := transmuxer.New(outputDir, sourceFilePath)
+	t.ConvertVideo()
 }

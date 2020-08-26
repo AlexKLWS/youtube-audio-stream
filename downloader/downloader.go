@@ -18,10 +18,10 @@ import (
 
 // Downloader offers high level functions to download videos into files
 type Downloader struct {
-	url       string
-	video     *videoinfo.VideoInfo
-	client    client.Client
-	OutputDir string // optional directory to store the files
+	url            string
+	video          *videoinfo.VideoInfo
+	client         client.Client
+	outputFilePath string
 }
 
 // New creates a new downloader with provided client
@@ -29,8 +29,18 @@ func New(c client.Client, url string) *Downloader {
 	return &Downloader{client: c, url: url}
 }
 
+// GetVideoID returns youtube video id
+func (dl *Downloader) GetVideoID() string {
+	return dl.video.ID
+}
+
+// GetVideoFilePath returns downloaded video file path
+func (dl *Downloader) GetVideoFilePath() string {
+	return dl.outputFilePath
+}
+
 //DownloadVideo returns a download handle
-func (dl *Downloader) DownloadVideo(ctx context.Context, outputFilename string) error {
+func (dl *Downloader) DownloadVideo(ctx context.Context) error {
 	v, err := videoinfo.Fetch(ctx, dl.client, dl.url)
 	if err != nil {
 		return err
@@ -38,10 +48,11 @@ func (dl *Downloader) DownloadVideo(ctx context.Context, outputFilename string) 
 	dl.video = v
 	v.SelectFormat()
 
-	destFile, err := dl.getOutputFile(outputFilename)
+	destFile, err := dl.getOutputFilePath()
 	if err != nil {
 		return err
 	}
+	dl.outputFilePath = destFile
 
 	// Create output file
 	out, err := os.Create(destFile)
@@ -53,21 +64,24 @@ func (dl *Downloader) DownloadVideo(ctx context.Context, outputFilename string) 
 	return dl.videoDLWorker(ctx, out)
 }
 
-func (dl *Downloader) getOutputFile(outputFile string) (string, error) {
+func (dl *Downloader) getOutputFilePath() (string, error) {
+	var outputFilePath string
 
-	if outputFile == "" {
-		outputFile = utils.SanitizeFilename(dl.video.Title)
-		outputFile += dl.video.FileFormat
+	if outputFilePath == "" {
+		outputFilePath = utils.SanitizeFilename(dl.video.Title)
+		outputFilePath += dl.video.FileFormat
 	}
 
-	if dl.OutputDir != "" {
-		if err := os.MkdirAll(dl.OutputDir, 0755); err != nil {
+	var outputDir string
+
+	if outputDir != "" {
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
 			return "", err
 		}
-		outputFile = filepath.Join(dl.OutputDir, outputFile)
+		outputFilePath = filepath.Join(outputDir, outputFilePath)
 	}
 
-	return outputFile, nil
+	return outputFilePath, nil
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File) error {
