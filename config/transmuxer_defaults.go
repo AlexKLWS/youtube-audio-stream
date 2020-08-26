@@ -1,5 +1,6 @@
 package config
 
+// TransmuxerDefaults is default arguments and flags for ffmpeg file conversion
 var TransmuxerDefaults = []string{
 	"-c:a", "aac",
 	"-b:a", "128k",
