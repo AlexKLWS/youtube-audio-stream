@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"github.com/AlexKLWS/lws-blog-server/config"
-	"github.com/labstack/echo"
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
+	"github.com/AlexKLWS/youtube-audio-stream/router"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,11 +20,20 @@ var (
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+}
 
+// SetupServeCommand binds command line flags and arguments to viper config instance
+func SetupServeCommand() {
+	serveCmd.Flags().StringP("source", "ts", viper.GetString(consts.SourceDir), "specify transmuxer source directory name")
+	serveCmd.Flags().StringP("output", "to", viper.GetString(consts.OutputDir), "specify transmuxer output directory name")
+	serveCmd.Flags().StringP("port", "p", viper.GetString(consts.Port), "specify server port")
+	serveCmd.Flags().StringP("socks-proxy", "sp", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
+
+	viper.BindPFlags(serveCmd.Flags())
 }
 
 func runServer() {
-	e := echo.New()
-	e.Static("/", "output")
-	e.Logger.Fatal(e.Start(viper.GetString(config.Port)))
+	r := router.New()
+
+	r.Server.Logger.Fatal(r.Server.Start(viper.GetString(config.Port)))
 }
