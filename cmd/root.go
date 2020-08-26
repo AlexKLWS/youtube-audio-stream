@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
+	"github.com/AlexKLWS/youtube-audio-stream/directories"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
 	"github.com/spf13/cobra"
@@ -38,6 +39,7 @@ func SetupRootCommand() {
 }
 
 func runRoot(url string) {
+	directories.PrepareDirectories()
 	httpTransport := client.GetHTTPTransport()
 
 	c := client.New(httpTransport)

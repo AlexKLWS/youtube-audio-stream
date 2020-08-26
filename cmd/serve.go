@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"github.com/AlexKLWS/lws-blog-server/config"
+	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
+	"github.com/AlexKLWS/youtube-audio-stream/directories"
 	"github.com/AlexKLWS/youtube-audio-stream/router"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,6 +35,11 @@ func SetupServeCommand() {
 }
 
 func runServer() {
+	directories.PrepareDirectories()
+
+	httpTransport := client.GetHTTPTransport()
+	client.New(httpTransport)
+
 	r := router.New()
 
 	r.Server.Logger.Fatal(r.Server.Start(viper.GetString(config.Port)))
