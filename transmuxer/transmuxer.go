@@ -6,6 +6,8 @@ import (
 	"os/exec"
 
 	"github.com/AlexKLWS/youtube-audio-stream/config"
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
+	"github.com/spf13/viper"
 	"golang.org/x/exp/errors/fmt"
 )
 
@@ -20,22 +22,19 @@ func New(outputDir string, sourceFilePath string) *Transmuxer {
 }
 
 func (t *Transmuxer) ConvertVideo() {
-	if _, err := os.Stat("output"); os.IsNotExist(err) {
-		if err2 := os.Mkdir("output", os.ModePerm); err2 != nil {
+	if _, err := os.Stat(fmt.Sprintf("%s/%s", viper.GetString(consts.OutputDir), t.outputDir)); os.IsNotExist(err) {
+		if err2 := os.Mkdir(fmt.Sprintf("%s/%s", viper.GetString(consts.OutputDir), t.outputDir), os.ModePerm); err2 != nil {
 			log.Fatal(err2)
 		}
 	}
-	if _, err := os.Stat(fmt.Sprintf("output/%s", t.outputDir)); os.IsNotExist(err) {
-		if err2 := os.Mkdir(fmt.Sprintf("output/%s", t.outputDir), os.ModePerm); err2 != nil {
-			log.Fatal(err2)
-		}
-	}
-	lol := append([]string{"-i", t.sourceFilePath}, config.TransmuxerDefaults...)
-	olo := fmt.Sprintf("output/%s/out%%03d.ts", t.outputDir)
-	lol = append(lol, olo)
-	olo = fmt.Sprintf("output/%s/out.m3u8", t.outputDir)
-	lol = append(lol, olo)
-	cmd := exec.Command("ffmpeg", lol...)
+
+	args := append([]string{"-i", t.sourceFilePath}, config.TransmuxerDefaults...)
+	segmentOutputFilename := fmt.Sprintf("%s/%s/out%%03d.ts", viper.GetString(consts.OutputDir), t.outputDir)
+	args = append(args, segmentOutputFilename)
+	playlistOutputFilename := fmt.Sprintf("%s/%s/out.m3u8", viper.GetString(consts.OutputDir), t.outputDir)
+	args = append(args, playlistOutputFilename)
+
+	cmd := exec.Command("ffmpeg", args...)
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal(err)
