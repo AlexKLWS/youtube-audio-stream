@@ -2,16 +2,22 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
+	"os"
+	"time"
 
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
+	"github.com/spf13/viper"
+	"golang.org/x/net/proxy"
 )
 
 // ClientWrapper offers basic http request methods
 type ClientWrapper struct {
-	Silent     bool
 	httpClient http.Client
 }
 
@@ -22,15 +28,43 @@ type Client interface {
 
 var instance Client
 
-// NewSilent creates new HTTP client with silent set to true
-func NewSilent(transport *http.Transport) Client {
-	instance = &ClientWrapper{Silent: true, httpClient: http.Client{Transport: transport}}
-	return instance
+func GetHTTPTransport() *http.Transport {
+	httpTransport := &http.Transport{
+		IdleConnTimeout:       60 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	socks5Proxy := viper.GetString(consts.SocksProxy)
+
+	if socks5Proxy != "" {
+		if viper.GetBool(consts.Debug) {
+			log.Println("Using SOCKS5 proxy", socks5Proxy)
+		}
+		dialer, err := proxy.SOCKS5("tcp", socks5Proxy, nil, proxy.Direct)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+			os.Exit(1)
+		}
+
+		// set our socks5 as the dialer
+		dc := dialer.(interface {
+			DialContext(ctx context.Context, network, addr string) (net.Conn, error)
+		})
+		httpTransport.DialContext = dc.DialContext
+	} else {
+		httpTransport.DialContext = (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+
+	return httpTransport
 }
 
 // New creates new HTTP client
 func New(transport *http.Transport) Client {
-	instance = &ClientWrapper{Silent: false, httpClient: http.Client{Transport: transport}}
+	instance = &ClientWrapper{httpClient: http.Client{Transport: transport}}
 	return instance
 }
 
@@ -41,7 +75,7 @@ func Get() Client {
 
 // HTTPGet does a HTTP GET request, checks the response to be a 200 OK and returns it
 func (c *ClientWrapper) HTTPGet(ctx context.Context, url string) (resp *http.Response, err error) {
-	if !c.Silent {
+	if viper.GetBool(consts.Debug) {
 		log.Println("GET", url)
 	}
 

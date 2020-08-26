@@ -8,5 +8,7 @@ import (
 func main() {
 	config.InitializeViper()
 
+	cmd.SetupRootCommand()
+	cmd.SetupServeCommand()
 	cmd.Execute()
 }
