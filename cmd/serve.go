@@ -5,6 +5,7 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/directories"
+	"github.com/AlexKLWS/youtube-audio-stream/handlers"
 	"github.com/AlexKLWS/youtube-audio-stream/router"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,10 +27,10 @@ func init() {
 
 // SetupServeCommand binds command line flags and arguments to viper config instance
 func SetupServeCommand() {
-	serveCmd.Flags().StringP("source", "ts", viper.GetString(consts.SourceDir), "specify transmuxer source directory name")
-	serveCmd.Flags().StringP("output", "to", viper.GetString(consts.OutputDir), "specify transmuxer output directory name")
-	serveCmd.Flags().StringP("port", "p", viper.GetString(consts.Port), "specify server port")
-	serveCmd.Flags().StringP("socks-proxy", "sp", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
+	serveCmd.Flags().StringP(consts.SourceDir, "s", viper.GetString(consts.SourceDir), "specify transmuxer source directory name")
+	serveCmd.Flags().StringP(consts.OutputDir, "o", viper.GetString(consts.OutputDir), "specify transmuxer output directory name")
+	serveCmd.Flags().StringP(consts.Port, "p", viper.GetString(consts.Port), "specify server port")
+	serveCmd.Flags().String("socks-proxy", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 
 	viper.BindPFlags(serveCmd.Flags())
 }
@@ -41,6 +42,6 @@ func runServer() {
 	client.New(httpTransport)
 
 	r := router.New()
-
+	handlers.RegisterHandlers(r)
 	r.Server.Logger.Fatal(r.Server.Start(viper.GetString(config.Port)))
 }
