@@ -3,15 +3,18 @@ package downloader
 import (
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/decipher"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/AlexKLWS/youtube-audio-stream/videoinfo"
+	"github.com/spf13/viper"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
@@ -48,7 +51,7 @@ func (dl *Downloader) DownloadVideo(ctx context.Context) error {
 	dl.video = v
 	v.SelectFormat()
 
-	destFile, err := dl.getOutputFilePath()
+	destFile, err := dl.getOutputFilePath(v.ID)
 	if err != nil {
 		return err
 	}
@@ -64,22 +67,18 @@ func (dl *Downloader) DownloadVideo(ctx context.Context) error {
 	return dl.videoDLWorker(ctx, out)
 }
 
-func (dl *Downloader) getOutputFilePath() (string, error) {
-	var outputFilePath string
+func (dl *Downloader) getOutputFilePath(videoID string) (string, error) {
+	outputFilePath := utils.SanitizeFilename(dl.video.Title)
+	outputFilePath += dl.video.FileFormat
 
-	if outputFilePath == "" {
-		outputFilePath = utils.SanitizeFilename(dl.video.Title)
-		outputFilePath += dl.video.FileFormat
-	}
+	outputDirectory := filepath.Join(viper.GetString(consts.SourceDir), videoID)
 
-	var outputDir string
-
-	if outputDir != "" {
-		if err := os.MkdirAll(outputDir, 0755); err != nil {
-			return "", err
+	if _, err := os.Stat(outputDirectory); os.IsNotExist(err) {
+		if err2 := os.Mkdir(outputDirectory, os.ModePerm); err2 != nil {
+			log.Fatal(err2)
 		}
-		outputFilePath = filepath.Join(outputDir, outputFilePath)
 	}
+	outputFilePath = filepath.Join(outputDirectory, outputFilePath)
 
 	return outputFilePath, nil
 }
