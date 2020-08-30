@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
@@ -38,7 +37,7 @@ func New() *Router {
 	}
 
 	// Serving the
-	e.Static(fmt.Sprintf("/%s", viper.GetString(consts.OutputDir)), fmt.Sprintf("./%s", viper.GetString(consts.OutputDir)))
+	e.Static("/output", "./output")
 	// Serving the website
 	e.Static("/", "../client/build")
 
