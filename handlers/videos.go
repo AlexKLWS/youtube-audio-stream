@@ -69,6 +69,5 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		return err
 	}
 
-	ws.Close()
 	return nil
 }
