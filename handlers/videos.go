@@ -7,20 +7,19 @@ import (
 	"strconv"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
+	"github.com/spf13/viper"
 )
-
-type VideoDownloadRequest struct {
-	URL string `json:"url" xml:"url"`
-}
 
 var (
 	upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 )
 
+// DownloadAndProcessVideo performs video download and transmuxing, sending updates to client via sockets during the process
 func DownloadAndProcessVideo(ctx echo.Context) error {
 	ws, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
@@ -34,7 +33,10 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		log.Fatal(err)
 		return err
 	}
-	fmt.Printf("Downloading URL: %s\n", url)
+
+	if viper.GetBool(consts.Debug) {
+		fmt.Printf("Downloading URL: %s\n", url)
+	}
 
 	queue := make(chan int64)
 
