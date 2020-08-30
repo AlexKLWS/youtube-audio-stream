@@ -1,17 +1,40 @@
 package downloader
 
-type progress struct {
+// DownloadProgressWriter writes download percentage to provided ProgressOutput
+type DownloadProgressWriter struct {
+	totalDownloaded    int64
+	previousPercentage int64
+	ContentLength      int64
+	ProgressOutput     chan int64
+}
+
+// Write implements the io.Writer interface.
+//
+// Always completes and never returns an error.
+func (wc *DownloadProgressWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	wc.totalDownloaded += int64(n)
+	percentage := wc.totalDownloaded * 100 / wc.ContentLength
+	if percentage != wc.previousPercentage {
+		wc.ProgressOutput <- percentage
+		wc.previousPercentage = percentage
+	}
+	return n, nil
+}
+
+// ProgressBarWriter is used to write download progress to mpb progress bar
+type ProgressBarWriter struct {
 	contentLength     float64
 	totalWrittenBytes float64
 	downloadLevel     float64
 }
 
-func (dl *progress) Write(p []byte) (n int, err error) {
+func (pbc *ProgressBarWriter) Write(p []byte) (n int, err error) {
 	n = len(p)
-	dl.totalWrittenBytes = dl.totalWrittenBytes + float64(n)
-	currentPercent := (dl.totalWrittenBytes / dl.contentLength) * 100
-	if (dl.downloadLevel <= currentPercent) && (dl.downloadLevel < 100) {
-		dl.downloadLevel++
+	pbc.totalWrittenBytes = pbc.totalWrittenBytes + float64(n)
+	currentPercent := (pbc.totalWrittenBytes / pbc.contentLength) * 100
+	if (pbc.downloadLevel <= currentPercent) && (pbc.downloadLevel < 100) {
+		pbc.downloadLevel++
 	}
 	return
 }

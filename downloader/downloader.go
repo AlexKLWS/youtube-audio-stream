@@ -42,36 +42,51 @@ func (dl *Downloader) GetVideoFilePath() string {
 	return dl.outputFilePath
 }
 
-//DownloadVideo returns a download handle
-func (dl *Downloader) DownloadVideo(ctx context.Context) error {
+// RetrieveVideoInfo fetches video info from youtube API
+func (dl *Downloader) RetrieveVideoInfo(ctx context.Context) error {
 	v, err := videoinfo.Fetch(ctx, dl.client, dl.url)
 	if err != nil {
 		return err
 	}
+
 	dl.video = v
 	v.SelectFormat()
 
-	destFile, err := dl.getOutputFilePath(v.ID)
+	return nil
+}
+
+//DownloadVideo returns a download handle
+func (dl *Downloader) DownloadVideo(ctx context.Context, progressOutput chan int64) error {
+	file, err := dl.getFileHandle()
 	if err != nil {
 		return err
+	}
+
+	defer file.Close()
+
+	return dl.videoDLWorker(ctx, file, progressOutput)
+}
+
+func (dl *Downloader) getFileHandle() (*os.File, error) {
+	destFile, err := dl.getOutputFilePath()
+	if err != nil {
+		return nil, err
 	}
 	dl.outputFilePath = destFile
 
 	// Create output file
-	out, err := os.Create(destFile)
+	file, err := os.Create(destFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer out.Close()
-
-	return dl.videoDLWorker(ctx, out)
+	return file, nil
 }
 
-func (dl *Downloader) getOutputFilePath(videoID string) (string, error) {
+func (dl *Downloader) getOutputFilePath() (string, error) {
 	outputFilePath := utils.SanitizeFilename(dl.video.Title)
 	outputFilePath += dl.video.FileFormat
 
-	outputDirectory := filepath.Join(viper.GetString(consts.SourceDir), videoID)
+	outputDirectory := filepath.Join(viper.GetString(consts.SourceDir), dl.video.ID)
 
 	if _, err := os.Stat(outputDirectory); os.IsNotExist(err) {
 		if err2 := os.Mkdir(outputDirectory, os.ModePerm); err2 != nil {
@@ -83,42 +98,54 @@ func (dl *Downloader) getOutputFilePath(videoID string) (string, error) {
 	return outputFilePath, nil
 }
 
-func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File) error {
+func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progressOutput chan int64) error {
 	resp, err := dl.getStream(ctx)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	prog := &progress{
-		contentLength: float64(resp.ContentLength),
+	var src io.Reader
+
+	// Send download data updates to progress output channel if it's available
+	if progressOutput != nil {
+		writeCounter := &DownloadProgressWriter{ProgressOutput: progressOutput}
+		writeCounter.ContentLength = resp.ContentLength
+
+		defer close(writeCounter.ProgressOutput)
+
+		src = io.TeeReader(resp.Body, writeCounter)
+
+		if _, err = io.Copy(file, src); err != nil {
+			return err
+		}
+	} else { // Otherwise print out progress to terminal
+		prog := &ProgressBarWriter{
+			contentLength: float64(resp.ContentLength),
+		}
+		progress := mpb.New(mpb.WithWidth(64))
+		bar := progress.AddBar(
+			int64(prog.contentLength),
+
+			mpb.BarStyle("╢▌▌░╟"),
+			mpb.PrependDecorators(
+				decor.CountersKibiByte("% .2f / % .2f"),
+				decor.Percentage(decor.WCSyncSpace),
+			),
+			mpb.AppendDecorators(
+				decor.EwmaETA(decor.ET_STYLE_GO, 90),
+				decor.Name(" | "),
+				decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
+			),
+		)
+
+		reader := bar.ProxyReader(resp.Body)
+		mw := io.MultiWriter(file, prog)
+		if _, err = io.Copy(mw, reader); err != nil {
+			return err
+		}
 	}
 
-	// create progress bar
-	progress := mpb.New(mpb.WithWidth(64))
-	bar := progress.AddBar(
-		int64(prog.contentLength),
-
-		mpb.BarStyle("╢▌▌░╟"),
-		mpb.PrependDecorators(
-			decor.CountersKibiByte("% .2f / % .2f"),
-			decor.Percentage(decor.WCSyncSpace),
-		),
-		mpb.AppendDecorators(
-			decor.EwmaETA(decor.ET_STYLE_GO, 90),
-			decor.Name(" | "),
-			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
-		),
-	)
-
-	reader := bar.ProxyReader(resp.Body)
-	mw := io.MultiWriter(out, prog)
-	_, err = io.Copy(mw, reader)
-	if err != nil {
-		return err
-	}
-
-	progress.Wait()
 	return nil
 }
 
