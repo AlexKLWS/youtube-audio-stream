@@ -11,7 +11,7 @@ const (
 )
 
 type ProgressUpdate struct {
-	Type               ProgressUpdateType
-	OutputURL          string
-	DownloadPercentage int
+	Type               ProgressUpdateType `json:"type"`
+	OutputURL          string             `json:"outputURL"`
+	DownloadPercentage int                `json:"downloadPercentage"`
 }
