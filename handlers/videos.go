@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
+	"github.com/AlexKLWS/youtube-audio-stream/models"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
+	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/spf13/viper"
@@ -40,16 +41,22 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 
 	queue := make(chan int64)
 
-	c := client.Get()
-	d := downloader.New(c, string(url))
-	if err := ws.WriteMessage(websocket.TextMessage, []byte("Downloading video...")); err != nil {
+	outputURL, err := utils.FormOutputURL(string(url))
+	if err != nil {
 		log.Fatal(err)
 		return err
 	}
+
+	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, OutputURL: outputURL}); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	c := client.Get()
+	d := downloader.New(c, string(url))
 	d.RetrieveVideoInfo(ctx.Request().Context())
 	go d.DownloadVideo(ctx.Request().Context(), queue)
 	for elem := range queue {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(strconv.FormatInt(elem, 10))); err != nil {
+		if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_IN_PROGRESS, DownloadPercentage: int(elem)}); err != nil {
 			log.Fatal(err)
 			return err
 		}
@@ -57,14 +64,14 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 	outputDir := d.GetVideoID()
 	sourceFilePath := d.GetVideoFilePath()
 
-	if err := ws.WriteMessage(websocket.TextMessage, []byte("Converting video...")); err != nil {
+	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_BEGUN}); err != nil {
 		log.Fatal(err)
 		return err
 	}
 
 	t := transmuxer.New(outputDir, sourceFilePath)
 	t.ConvertVideo()
-	if err := ws.WriteMessage(websocket.TextMessage, []byte("Video converted successfully...")); err != nil {
+	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_FINISHED}); err != nil {
 		log.Fatal(err)
 		return err
 	}
