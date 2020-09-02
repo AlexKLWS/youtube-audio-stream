@@ -9,11 +9,12 @@ const (
 	DOWNLOAD_FINISHED
 	TRANSMUXING_BEGUN
 	TRANSMUXING_FINISHED
+	AUDIO_IS_ALREADY_AVAILABLE
 )
 
 // ProgressUpdate is a json object describing current state of video processing progress
 type ProgressUpdate struct {
 	Type               ProgressUpdateType `json:"type"`
-	OutputURL          string             `json:"outputURL"`
+	VideoID            string             `json:"videoID"`
 	DownloadPercentage int                `json:"downloadPercentage"`
 }

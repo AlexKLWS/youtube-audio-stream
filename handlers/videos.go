@@ -41,7 +41,7 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 
 	queue := make(chan int64)
 
-	outputURL, err := utils.FormOutputURL(string(url))
+	videoID, err := utils.ExtractVideoID(string(url))
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -49,6 +49,7 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, OutputURL: outputURL}); err != nil {
 		log.Fatal(err)
+	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, VideoID: videoID}); err != nil {
 		return err
 	}
 	c := client.Get()
