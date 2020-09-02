@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
+	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/directories"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
@@ -40,6 +41,9 @@ func SetupRootCommand() {
 }
 
 func runRoot(url string) {
+	if viper.GetBool(consts.Debug) {
+		fmt.Println("Running in debug mode")
+	}
 	directories.PrepareDirectories()
 	httpTransport := client.GetHTTPTransport()
 

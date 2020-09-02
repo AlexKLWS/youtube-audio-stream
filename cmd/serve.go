@@ -38,14 +38,13 @@ func SetupServeCommand() {
 }
 
 func runServer() {
+	if viper.GetBool(consts.Debug) {
+		fmt.Println("Running in debug mode")
+	}
 	directories.PrepareDirectories()
 
 	httpTransport := client.GetHTTPTransport()
 	client.New(httpTransport)
-
-	if viper.GetBool(consts.Debug) {
-		fmt.Print("Running in debug mode\n")
-	}
 
 	r := router.New()
 	handlers.RegisterHandlers(r)
