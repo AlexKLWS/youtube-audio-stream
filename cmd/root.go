@@ -34,8 +34,9 @@ func Execute() {
 
 // SetupRootCommand binds command line flags and arguments to viper config instance
 func SetupRootCommand() {
-	rootCmd.PersistentFlags().BoolP("debug", "d", viper.GetString("env") == "debug", "specify server port")
-	viper.BindPFlags(serveCmd.Flags())
+	rootCmd.PersistentFlags().BoolP("debug", "d", viper.GetString("env") == "debug", "run in debug mode")
+
+	viper.BindPFlags(rootCmd.PersistentFlags())
 }
 
 func runRoot(url string) {
