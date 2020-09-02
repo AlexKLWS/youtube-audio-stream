@@ -90,7 +90,8 @@ func (dl *Downloader) getOutputFilePath() (string, error) {
 
 	if _, err := os.Stat(outputDirectory); os.IsNotExist(err) {
 		if err2 := os.Mkdir(outputDirectory, os.ModePerm); err2 != nil {
-			log.Fatal(err2)
+			log.Print(err2)
+			return "", err2
 		}
 	}
 	outputFilePath = filepath.Join(outputDirectory, outputFilePath)
@@ -101,6 +102,7 @@ func (dl *Downloader) getOutputFilePath() (string, error) {
 func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progressOutput chan int64) error {
 	resp, err := dl.getStream(ctx)
 	if err != nil {
+		log.Print(err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -117,6 +119,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progress
 		src = io.TeeReader(resp.Body, writeCounter)
 
 		if _, err = io.Copy(file, src); err != nil {
+			log.Print(err)
 			return err
 		}
 	} else { // Otherwise print out progress to terminal
@@ -142,6 +145,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progress
 		reader := bar.ProxyReader(resp.Body)
 		mw := io.MultiWriter(file, prog)
 		if _, err = io.Copy(mw, reader); err != nil {
+			log.Print(err)
 			return err
 		}
 	}
@@ -153,6 +157,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progress
 func (dl *Downloader) getStream(ctx context.Context) (*http.Response, error) {
 	url, err := dl.getStreamURL(ctx)
 	if err != nil {
+		log.Print(err)
 		return nil, err
 	}
 

@@ -24,14 +24,14 @@ var (
 func DownloadAndProcessVideo(ctx echo.Context) error {
 	ws, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return err
 	}
 	defer ws.Close()
 
 	_, url, err := ws.ReadMessage()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return err
 	}
 
@@ -43,13 +43,12 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 
 	videoID, err := utils.ExtractVideoID(string(url))
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return err
 	}
 
-	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, OutputURL: outputURL}); err != nil {
-		log.Fatal(err)
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, VideoID: videoID}); err != nil {
+		log.Print(err)
 		return err
 	}
 	c := client.Get()
@@ -58,7 +57,7 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 	go d.DownloadVideo(ctx.Request().Context(), queue)
 	for elem := range queue {
 		if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_IN_PROGRESS, DownloadPercentage: int(elem)}); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 			return err
 		}
 	}
@@ -66,14 +65,14 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 	sourceFilePath := d.GetVideoFilePath()
 
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_BEGUN}); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return err
 	}
 
 	t := transmuxer.New(outputDir, sourceFilePath)
 	t.ConvertVideo()
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_FINISHED}); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return err
 	}
 
