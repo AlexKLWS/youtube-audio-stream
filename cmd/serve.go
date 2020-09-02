@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/AlexKLWS/lws-blog-server/config"
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
@@ -40,6 +42,10 @@ func runServer() {
 
 	httpTransport := client.GetHTTPTransport()
 	client.New(httpTransport)
+
+	if viper.GetBool(consts.Debug) {
+		fmt.Print("Running in debug mode\n")
+	}
 
 	r := router.New()
 	handlers.RegisterHandlers(r)
