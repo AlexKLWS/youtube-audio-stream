@@ -2,6 +2,7 @@ package downloadhandler
 
 import (
 	"context"
+	"sync"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
@@ -10,9 +11,20 @@ import (
 var (
 	progressOutputs map[string]chan int64
 	downloaders     map[string]*downloader.Downloader
+	mutex           sync.RWMutex
 )
 
 func GetOrCreateDownloader(ctx context.Context, client client.Client, videoID string) (*downloader.Downloader, chan int64) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if downloaders == nil {
+		downloaders = make(map[string]*downloader.Downloader)
+	}
+	if progressOutputs == nil {
+		progressOutputs = make(map[string]chan int64)
+	}
+
 	d, ok := downloaders[videoID]
 	if !ok {
 		newDownloader := downloader.New(client, videoID)
@@ -32,6 +44,9 @@ func GetOrCreateDownloader(ctx context.Context, client client.Client, videoID st
 }
 
 func RemoveDownloader(videoID string) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if _, ok := downloaders[videoID]; ok {
 		delete(downloaders, videoID)
 	}
