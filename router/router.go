@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
@@ -22,6 +21,8 @@ type Router struct {
 func New() *Router {
 	e := echo.New()
 
+	e.Use(middleware.Static("/output"))
+
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Root:   "client/build",
 		HTML5:  true,
@@ -37,7 +38,7 @@ func New() *Router {
 		}))
 	}
 
-	e.Static(fmt.Sprintf("/%s", viper.GetString(consts.OutputRoute)), fmt.Sprintf("./%s", viper.GetString(consts.OutputRoute)))
+	// e.Static(fmt.Sprintf("/%s", viper.GetString(consts.OutputRoute)), fmt.Sprintf("./%s", viper.GetString(consts.OutputRoute)))
 
 	a := e.Group("/api")
 
