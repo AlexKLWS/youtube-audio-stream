@@ -27,12 +27,7 @@ type VideoInfo struct {
 }
 
 // Fetch fetches video info metadata with a context
-func Fetch(ctx context.Context, c client.Client, url string) (*VideoInfo, error) {
-	id, err := utils.ExtractVideoID(url)
-	if err != nil {
-		return nil, fmt.Errorf("extractVideoID failed: %w", err)
-	}
-
+func Fetch(ctx context.Context, c client.Client, id string) (*VideoInfo, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
 	resp, err := c.HTTPGet(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)

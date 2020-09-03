@@ -21,20 +21,15 @@ import (
 
 // Downloader offers high level functions to download videos into files
 type Downloader struct {
-	url            string
+	videoID        string
 	video          *videoinfo.VideoInfo
 	client         client.Client
 	outputFilePath string
 }
 
 // New creates a new downloader with provided client
-func New(c client.Client, url string) *Downloader {
-	return &Downloader{client: c, url: url}
-}
-
-// GetVideoID returns youtube video id
-func (dl *Downloader) GetVideoID() string {
-	return dl.video.ID
+func New(c client.Client, videoID string) *Downloader {
+	return &Downloader{client: c, videoID: videoID}
 }
 
 // GetVideoFilePath returns downloaded video file path
@@ -44,7 +39,7 @@ func (dl *Downloader) GetVideoFilePath() string {
 
 // RetrieveVideoInfo fetches video info from youtube API
 func (dl *Downloader) RetrieveVideoInfo(ctx context.Context) error {
-	v, err := videoinfo.Fetch(ctx, dl.client, dl.url)
+	v, err := videoinfo.Fetch(ctx, dl.client, dl.videoID)
 	if err != nil {
 		return err
 	}

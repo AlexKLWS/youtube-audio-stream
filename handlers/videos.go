@@ -7,7 +7,7 @@ import (
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
-	"github.com/AlexKLWS/youtube-audio-stream/downloader"
+	"github.com/AlexKLWS/youtube-audio-stream/downloadhandler"
 	"github.com/AlexKLWS/youtube-audio-stream/models"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
@@ -39,8 +39,6 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		fmt.Printf("Downloading URL: %s\n", url)
 	}
 
-	queue := make(chan int64)
-
 	videoID, err := utils.ExtractVideoID(string(url))
 	if err != nil {
 		log.Print(err)
@@ -51,29 +49,25 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		log.Print(err)
 		return err
 	}
-	c := client.Get()
-	d := downloader.New(c, string(url))
-	d.RetrieveVideoInfo(ctx.Request().Context())
-	go d.DownloadVideo(ctx.Request().Context(), queue)
+
+	d, queue := downloadhandler.GetOrCreateDownloader(ctx.Request().Context(), client.Get(), videoID)
 	for elem := range queue {
 		if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_IN_PROGRESS, DownloadPercentage: int(elem)}); err != nil {
 			log.Print(err)
-			return err
 		}
 	}
-	outputDir := d.GetVideoID()
 	sourceFilePath := d.GetVideoFilePath()
+
+	downloadhandler.RemoveDownloader(videoID)
 
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_BEGUN}); err != nil {
 		log.Print(err)
-		return err
 	}
 
-	t := transmuxer.New(outputDir, sourceFilePath)
+	t := transmuxer.New(videoID, sourceFilePath)
 	t.ConvertVideo()
 	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_FINISHED}); err != nil {
 		log.Print(err)
-		return err
 	}
 
 	return nil

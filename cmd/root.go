@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
@@ -10,6 +11,7 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/directories"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
+	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -50,10 +52,15 @@ func runRoot(url string) {
 	c := client.New(httpTransport)
 	ctx := context.Background()
 
-	d := downloader.New(c, url)
+	videoID, err := utils.ExtractVideoID(string(url))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	d := downloader.New(c, videoID)
 	d.RetrieveVideoInfo(ctx)
 	d.DownloadVideo(ctx, nil)
-	outputDir := d.GetVideoID()
+	outputDir := videoID
 	sourceFilePath := d.GetVideoFilePath()
 
 	t := transmuxer.New(outputDir, sourceFilePath)
