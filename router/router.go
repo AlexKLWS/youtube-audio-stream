@@ -23,7 +23,7 @@ func New() *Router {
 	e := echo.New()
 
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   "../client/build",
+		Root:   "./client/build",
 		HTML5:  true,
 		Browse: false,
 	}))
