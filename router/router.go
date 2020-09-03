@@ -34,10 +34,10 @@ func New() *Router {
 
 	e.Static(fmt.Sprintf("/%s", viper.GetString(consts.OutputRoute)), fmt.Sprintf("./%s", viper.GetString(consts.OutputRoute)))
 	// Serving the website
-	e.Static("/", "./client/build")
+	e.Static("/", "client/build")
 
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   "./client/build",
+		Root:   "client/build",
 		HTML5:  true,
 		Browse: false,
 	}))
