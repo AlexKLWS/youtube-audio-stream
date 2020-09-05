@@ -33,11 +33,6 @@ func New(c client.Client, videoID string) *Downloader {
 	return &Downloader{client: c, videoID: videoID}
 }
 
-// GetVideoFilePath returns downloaded video file path
-func (dl *Downloader) GetVideoFilePath() string {
-	return dl.outputFilePath
-}
-
 // RetrieveVideoInfo fetches video info from youtube API
 func (dl *Downloader) RetrieveVideoInfo(ctx context.Context) error {
 	v, err := videoinfo.Fetch(ctx, dl.client, dl.videoID)

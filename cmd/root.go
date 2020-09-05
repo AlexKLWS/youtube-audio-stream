@@ -61,7 +61,11 @@ func runRoot(url string) {
 	d.RetrieveVideoInfo(ctx)
 	d.DownloadVideo(ctx, nil)
 	outputDir := videoID
-	sourceFilePath := d.GetVideoFilePath()
+
+	sourceFilePath, err := files.GetSourceFilePath(videoID)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	t := transmuxer.New(outputDir, sourceFilePath)
 	t.ConvertVideo()
