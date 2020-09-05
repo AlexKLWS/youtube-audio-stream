@@ -1,8 +1,11 @@
 package consts
 
-const Debug = "debug"
-const OutputDir = "output-directory"
-const OutputRoute = "output-route"
-const SourceDir = "source-directory"
-const Port = "port"
-const SocksProxy = "socks-proxy"
+const (
+	Debug            = "debug"
+	OutputDir        = "output-directory"
+	OutputRoute      = "output-route"
+	SourceDir        = "source-directory"
+	Port             = "port"
+	SocksProxy       = "socks-proxy"
+	CompletionMarker = "completion-marker"
+)
