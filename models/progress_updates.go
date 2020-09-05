@@ -4,7 +4,8 @@ package models
 type ProgressUpdateType uint
 
 const (
-	DOWNLOAD_BEGUN ProgressUpdateType = iota
+	ERROR ProgressUpdateType = iota
+	DOWNLOAD_BEGUN
 	DOWNLOAD_IN_PROGRESS
 	DOWNLOAD_FINISHED
 	TRANSMUXING_BEGUN
