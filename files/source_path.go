@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -18,6 +19,9 @@ func GetSourceFilePath(videoID string) (string, error) {
 		}
 		return nil
 	})
+	if file == "" {
+		return "", fmt.Errorf("Actually no source file for id: %s", videoID)
+	}
 	path = filepath.Join(path, file)
 	return path, err
 }
