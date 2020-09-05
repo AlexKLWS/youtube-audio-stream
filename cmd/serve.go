@@ -6,7 +6,7 @@ import (
 	"github.com/AlexKLWS/lws-blog-server/config"
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
-	"github.com/AlexKLWS/youtube-audio-stream/directories"
+	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/AlexKLWS/youtube-audio-stream/handlers"
 	"github.com/AlexKLWS/youtube-audio-stream/router"
 	"github.com/spf13/cobra"
@@ -41,7 +41,7 @@ func runServer() {
 	if viper.GetBool(consts.Debug) {
 		fmt.Println("Running in debug mode")
 	}
-	directories.PrepareDirectories()
+	files.PrepareDirectories()
 
 	httpTransport := client.GetHTTPTransport()
 	client.New(httpTransport)

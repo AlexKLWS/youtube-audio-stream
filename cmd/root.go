@@ -8,8 +8,8 @@ import (
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
-	"github.com/AlexKLWS/youtube-audio-stream/directories"
 	"github.com/AlexKLWS/youtube-audio-stream/downloader"
+	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/spf13/cobra"
@@ -46,7 +46,7 @@ func runRoot(url string) {
 	if viper.GetBool(consts.Debug) {
 		fmt.Println("Running in debug mode")
 	}
-	directories.PrepareDirectories()
+	files.PrepareDirectories()
 	httpTransport := client.GetHTTPTransport()
 
 	c := client.New(httpTransport)

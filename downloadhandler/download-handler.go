@@ -14,7 +14,7 @@ var (
 	mutex           sync.RWMutex
 )
 
-func GetOrCreateDownloader(ctx context.Context, client client.Client, videoID string) (*downloader.Downloader, chan int64) {
+func GetOrCreateDownloadHandle(ctx context.Context, client client.Client, videoID string) chan int64 {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -25,7 +25,7 @@ func GetOrCreateDownloader(ctx context.Context, client client.Client, videoID st
 		progressOutputs = make(map[string]chan int64)
 	}
 
-	d, ok := downloaders[videoID]
+	_, ok := downloaders[videoID]
 	if !ok {
 		newDownloader := downloader.New(client, videoID)
 		downloaders[videoID] = newDownloader
@@ -35,12 +35,12 @@ func GetOrCreateDownloader(ctx context.Context, client client.Client, videoID st
 
 		go startDownload(ctx, newDownloader, newProgressOutput)
 
-		return newDownloader, newProgressOutput
+		return newProgressOutput
 	}
 
 	p := progressOutputs[videoID]
 
-	return d, p
+	return p
 }
 
 func RemoveDownloader(videoID string) {
