@@ -4,9 +4,11 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/AlexKLWS/youtube-audio-stream/config"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
+	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/errors/fmt"
 )
@@ -22,8 +24,9 @@ func New(outputDir string, sourceFilePath string) *Transmuxer {
 }
 
 func (t *Transmuxer) ConvertVideo() error {
-	if _, err := os.Stat(fmt.Sprintf("%s/%s", viper.GetString(consts.OutputDir), t.outputDir)); os.IsNotExist(err) {
-		if err2 := os.Mkdir(fmt.Sprintf("%s/%s", viper.GetString(consts.OutputDir), t.outputDir), os.ModePerm); err2 != nil {
+	outputPath := filepath.Join(viper.GetString(consts.OutputDir), t.outputDir)
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		if err2 := os.Mkdir(outputPath, os.ModePerm); err2 != nil {
 			log.Print(err2)
 			return err2
 		}
@@ -41,5 +44,8 @@ func (t *Transmuxer) ConvertVideo() error {
 		log.Print(err)
 		return err
 	}
-	return nil
+
+	err = files.CreateCompletionMarker(outputPath)
+
+	return err
 }

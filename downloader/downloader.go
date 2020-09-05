@@ -12,6 +12,7 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/decipher"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
+	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/AlexKLWS/youtube-audio-stream/videoinfo"
 	"github.com/spf13/viper"
@@ -145,7 +146,9 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progress
 		}
 	}
 
-	return nil
+	err = files.CreateCompletionMarker(dl.outputFilePath)
+
+	return err
 }
 
 // GetStreamContext returns the HTTP response for a specific format with a context
