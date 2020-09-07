@@ -13,6 +13,7 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/decipher"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
 	"github.com/AlexKLWS/youtube-audio-stream/files"
+	"github.com/AlexKLWS/youtube-audio-stream/models"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/AlexKLWS/youtube-audio-stream/videoinfo"
 	"github.com/spf13/viper"
@@ -26,11 +27,12 @@ type Downloader struct {
 	video          *videoinfo.VideoInfo
 	client         client.Client
 	outputFilePath string
+	progressOutput chan models.ProgressUpdate
 }
 
 // New creates a new downloader with provided client
-func New(c client.Client, videoID string) *Downloader {
-	return &Downloader{client: c, videoID: videoID}
+func New(c client.Client, videoID string, progressOutput chan models.ProgressUpdate) *Downloader {
+	return &Downloader{client: c, videoID: videoID, progressOutput: progressOutput}
 }
 
 // RetrieveVideoInfo fetches video info from youtube API
@@ -47,7 +49,7 @@ func (dl *Downloader) RetrieveVideoInfo(ctx context.Context) error {
 }
 
 //DownloadVideo returns a download handle
-func (dl *Downloader) DownloadVideo(ctx context.Context, progressOutput chan int64) error {
+func (dl *Downloader) DownloadVideo(ctx context.Context) error {
 	file, err := dl.getFileHandle()
 	if err != nil {
 		return err
@@ -55,7 +57,7 @@ func (dl *Downloader) DownloadVideo(ctx context.Context, progressOutput chan int
 
 	defer file.Close()
 
-	return dl.videoDLWorker(ctx, file, progressOutput)
+	return dl.videoDLWorker(ctx, file)
 }
 
 func (dl *Downloader) getFileHandle() (*os.File, error) {
@@ -90,7 +92,7 @@ func (dl *Downloader) getOutputFilePath() (string, error) {
 	return outputFilePath, nil
 }
 
-func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progressOutput chan int64) error {
+func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 	resp, err := dl.getStream(ctx)
 	if err != nil {
 		log.Print(err)
@@ -101,8 +103,8 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File, progress
 	var src io.Reader
 
 	// Send download data updates to progress output channel if it's available
-	if progressOutput != nil {
-		writeCounter := &DownloadProgressWriter{ProgressOutput: progressOutput}
+	if dl.progressOutput != nil {
+		writeCounter := &DownloadProgressWriter{ProgressOutput: dl.progressOutput}
 		writeCounter.ContentLength = resp.ContentLength
 
 		defer close(writeCounter.ProgressOutput)

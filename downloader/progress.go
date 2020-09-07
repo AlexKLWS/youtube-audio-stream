@@ -1,11 +1,13 @@
 package downloader
 
+import "github.com/AlexKLWS/youtube-audio-stream/models"
+
 // DownloadProgressWriter writes download percentage to provided ProgressOutput
 type DownloadProgressWriter struct {
 	totalDownloaded    int64
 	previousPercentage int64
 	ContentLength      int64
-	ProgressOutput     chan int64
+	ProgressOutput     chan models.ProgressUpdate
 }
 
 // Write implements the io.Writer interface.
@@ -16,7 +18,7 @@ func (wc *DownloadProgressWriter) Write(p []byte) (int, error) {
 	wc.totalDownloaded += int64(n)
 	percentage := wc.totalDownloaded * 100 / wc.ContentLength
 	if percentage != wc.previousPercentage {
-		wc.ProgressOutput <- percentage
+		wc.ProgressOutput <- models.ProgressUpdate{Type: models.DOWNLOAD_IN_PROGRESS, DownloadPercentage: int(percentage)}
 		wc.previousPercentage = percentage
 	}
 	return n, nil

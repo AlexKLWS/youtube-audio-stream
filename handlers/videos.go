@@ -1,16 +1,14 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/AlexKLWS/youtube-audio-stream/client"
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
-	"github.com/AlexKLWS/youtube-audio-stream/downloadhandler"
 	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/AlexKLWS/youtube-audio-stream/models"
-	"github.com/AlexKLWS/youtube-audio-stream/transmuxer"
+	"github.com/AlexKLWS/youtube-audio-stream/processhandler"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
@@ -39,10 +37,6 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		return nil
 	}
 
-	if viper.GetBool(consts.Debug) {
-		fmt.Printf("Downloading URL: %s\n", url)
-	}
-
 	videoID, err := utils.ExtractVideoID(string(url))
 	if err != nil {
 		log.Print(err)
@@ -53,47 +47,18 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 	}
 
 	if files.CheckIfWasProcessed(viper.GetString(consts.OutputDir), videoID) {
-		ws.WriteJSON(models.ProgressUpdate{Type: models.AUDIO_IS_ALREADY_AVAILABLE, VideoID: videoID})
-		return nil
-	}
-
-	if !files.CheckIfWasProcessed(viper.GetString(consts.SourceDir), videoID) {
-		if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_BEGUN, VideoID: videoID}); err != nil {
-			log.Print(err)
-			return err
-		}
-
-		progressUpdates := downloadhandler.GetOrCreateDownloadHandle(ctx.Request().Context(), client.Get(), videoID)
-		for update := range progressUpdates {
-			if err := ws.WriteJSON(models.ProgressUpdate{Type: models.DOWNLOAD_IN_PROGRESS, DownloadPercentage: int(update)}); err != nil {
-				log.Print(err)
-			}
-		}
-
-		downloadhandler.RemoveDownloader(videoID)
-	}
-
-	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_BEGUN}); err != nil {
-		log.Print(err)
-	}
-
-	sourceFilePath, err := files.GetSourceFilePath(videoID)
-	if err != nil {
-		log.Print(err)
-		if err := ws.WriteJSON(models.ProgressUpdate{Type: models.ERROR}); err != nil {
+		if ws.WriteJSON(models.ProgressUpdate{Type: models.AUDIO_IS_AVAILABLE, VideoID: videoID}); err != nil {
 			log.Print(err)
 		}
 		return nil
 	}
 
-	t := transmuxer.New(videoID, sourceFilePath)
-	t.ConvertVideo()
-	if err := ws.WriteJSON(models.ProgressUpdate{Type: models.TRANSMUXING_FINISHED}); err != nil {
-		log.Print(err)
-	}
-
-	if viper.GetBool(consts.Debug) {
-		fmt.Printf("Video %s\n is ready for streaming!", videoID)
+	progressUpdates := processhandler.GetOrCreateProcessHandle(ctx.Request().Context(), client.Get(), videoID)
+	for update := range progressUpdates {
+		if err := ws.WriteJSON(update); err != nil {
+			log.Print(err)
+			break
+		}
 	}
 
 	return nil

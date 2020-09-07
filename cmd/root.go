@@ -57,9 +57,9 @@ func runRoot(url string) {
 		log.Fatal(err)
 	}
 
-	d := downloader.New(c, videoID)
+	d := downloader.New(c, videoID, nil)
 	d.RetrieveVideoInfo(ctx)
-	d.DownloadVideo(ctx, nil)
+	d.DownloadVideo(ctx)
 	outputDir := videoID
 
 	sourceFilePath, err := files.GetSourceFilePath(videoID)
