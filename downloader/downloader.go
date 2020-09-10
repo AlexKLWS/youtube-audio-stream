@@ -107,8 +107,6 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 		writeCounter := &DownloadProgressWriter{ProgressOutput: dl.progressOutput}
 		writeCounter.ContentLength = resp.ContentLength
 
-		defer close(writeCounter.ProgressOutput)
-
 		src = io.TeeReader(resp.Body, writeCounter)
 
 		if _, err = io.Copy(file, src); err != nil {

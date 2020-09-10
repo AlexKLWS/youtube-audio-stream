@@ -19,7 +19,7 @@ var (
 	mutex           sync.RWMutex
 )
 
-func GetOrCreateProcessHandle(ctx context.Context, client client.Client, videoID string) chan models.ProgressUpdate {
+func GetOrCreateProcessHandle(client client.Client, videoID string) chan models.ProgressUpdate {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -34,7 +34,7 @@ func GetOrCreateProcessHandle(ctx context.Context, client client.Client, videoID
 
 		newDownloader := downloader.New(client, videoID, newProgressOutput)
 
-		go handleProcessing(ctx, videoID, newDownloader, newProgressOutput)
+		go handleProcessing(videoID, newDownloader, newProgressOutput)
 
 		return newProgressOutput
 	}
@@ -42,8 +42,11 @@ func GetOrCreateProcessHandle(ctx context.Context, client client.Client, videoID
 	return p
 }
 
-func handleProcessing(ctx context.Context, videoID string, d *downloader.Downloader, p chan models.ProgressUpdate) {
+func handleProcessing(videoID string, d *downloader.Downloader, p chan models.ProgressUpdate) {
 	defer removeProcessHandler(videoID)
+	defer close(p)
+
+	ctx := context.Background()
 
 	if viper.GetBool(consts.Debug) {
 		log.Printf("Downloading video with id: %s\n", videoID)
