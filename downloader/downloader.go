@@ -23,11 +23,11 @@ import (
 
 // Downloader offers high level functions to download videos into files
 type Downloader struct {
-	videoID        string
-	video          *videoinfo.VideoInfo
-	client         client.Client
-	outputFilePath string
-	progressOutput chan models.ProgressUpdate
+	videoID         string
+	video           *videoinfo.VideoInfo
+	client          client.Client
+	outputDirectory string
+	progressOutput  chan models.ProgressUpdate
 }
 
 // New creates a new downloader with provided client
@@ -65,7 +65,6 @@ func (dl *Downloader) getFileHandle() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	dl.outputFilePath = destFile
 
 	// Create output file
 	file, err := os.Create(destFile)
@@ -79,15 +78,15 @@ func (dl *Downloader) getOutputFilePath() (string, error) {
 	outputFilePath := utils.SanitizeFilename(dl.video.Title)
 	outputFilePath += dl.video.FileFormat
 
-	outputDirectory := filepath.Join(viper.GetString(consts.SourceDir), dl.video.ID)
+	dl.outputDirectory = filepath.Join(viper.GetString(consts.SourceDir), dl.video.ID)
 
-	if _, err := os.Stat(outputDirectory); os.IsNotExist(err) {
-		if err2 := os.Mkdir(outputDirectory, os.ModePerm); err2 != nil {
+	if _, err := os.Stat(dl.outputDirectory); os.IsNotExist(err) {
+		if err2 := os.Mkdir(dl.outputDirectory, os.ModePerm); err2 != nil {
 			log.Print(err2)
 			return "", err2
 		}
 	}
-	outputFilePath = filepath.Join(outputDirectory, outputFilePath)
+	outputFilePath = filepath.Join(dl.outputDirectory, outputFilePath)
 
 	return outputFilePath, nil
 }
@@ -141,7 +140,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 		}
 	}
 
-	err = files.CreateCompletionMarker(dl.outputFilePath)
+	err = files.CreateCompletionMarker(dl.outputDirectory)
 
 	return err
 }
