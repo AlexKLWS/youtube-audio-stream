@@ -53,6 +53,11 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 		return nil
 	}
 
+	if ws.WriteJSON(models.ProgressUpdate{Type: models.REQUEST_ACCEPTED, VideoID: videoID}); err != nil {
+		log.Print(err)
+		return nil
+	}
+
 	progressUpdates := processhandler.GetOrCreateProcessHandle(client.Get(), videoID)
 	for update := range progressUpdates {
 		if err := ws.WriteJSON(update); err != nil {

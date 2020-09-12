@@ -5,6 +5,7 @@ type ProgressUpdateType uint
 
 const (
 	ERROR ProgressUpdateType = iota
+	REQUEST_ACCEPTED
 	DOWNLOAD_BEGUN
 	DOWNLOAD_IN_PROGRESS
 	DOWNLOAD_FINISHED
