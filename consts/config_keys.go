@@ -8,4 +8,5 @@ const (
 	Port             = "port"
 	SocksProxy       = "socks-proxy"
 	CompletionMarker = "completion-marker"
+	Version          = "version"
 )

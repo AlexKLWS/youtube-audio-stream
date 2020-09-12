@@ -41,6 +41,7 @@ func runServer() {
 	if viper.GetBool(consts.Debug) {
 		fmt.Println("Running in debug mode")
 	}
+	fmt.Println(viper.GetString(consts.Version))
 	files.PrepareDirectories()
 
 	httpTransport := client.GetHTTPTransport()
