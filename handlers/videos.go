@@ -59,8 +59,8 @@ func DownloadAndProcessVideo(ctx echo.Context) error {
 	}
 
 	progressUpdates := processhandler.GetOrCreateProcessHandle(client.Get(), videoID)
-	for update := range progressUpdates.Observe() {
-		if err := ws.WriteJSON(update.V); err != nil {
+	for update := range progressUpdates {
+		if err := ws.WriteJSON(update); err != nil {
 			log.Print(err)
 			break
 		}

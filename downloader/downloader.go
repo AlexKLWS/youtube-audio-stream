@@ -12,10 +12,10 @@ import (
 	"github.com/AlexKLWS/youtube-audio-stream/consts"
 	"github.com/AlexKLWS/youtube-audio-stream/decipher"
 	"github.com/AlexKLWS/youtube-audio-stream/exerrors"
+	"github.com/AlexKLWS/youtube-audio-stream/feed"
 	"github.com/AlexKLWS/youtube-audio-stream/files"
 	"github.com/AlexKLWS/youtube-audio-stream/utils"
 	"github.com/AlexKLWS/youtube-audio-stream/videoinfo"
-	"github.com/reactivex/rxgo"
 	"github.com/spf13/viper"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
@@ -27,11 +27,11 @@ type Downloader struct {
 	video           *videoinfo.VideoInfo
 	client          client.Client
 	outputDirectory string
-	progressOutput  chan rxgo.Item
+	progressOutput  *feed.ProgressUpdateFeed
 }
 
 // New creates a new downloader with provided client
-func New(c client.Client, videoID string, progressOutput chan rxgo.Item) *Downloader {
+func New(c client.Client, videoID string, progressOutput *feed.ProgressUpdateFeed) *Downloader {
 	return &Downloader{client: c, videoID: videoID, progressOutput: progressOutput}
 }
 
