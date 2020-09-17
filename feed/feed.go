@@ -49,7 +49,7 @@ func (f *ProgressUpdateFeed) Send(update models.ProgressUpdate) {
 func (f *ProgressUpdateFeed) Close() {
 	// TODO: This is a hack to make sure all active channels send updates to clients
 	// before closing
-	time.Sleep(1500 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	f.mu.Lock()
 	defer f.mu.Unlock()
