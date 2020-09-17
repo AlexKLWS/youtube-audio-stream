@@ -94,6 +94,7 @@ func (dl *Downloader) getOutputFilePath() (string, error) {
 func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 	resp, err := dl.getStream(ctx)
 	if err != nil {
+		log.Println("ERROR downloading the file: ")
 		log.Print(err)
 		return err
 	}
@@ -109,6 +110,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 		src = io.TeeReader(resp.Body, writeCounter)
 
 		if _, err = io.Copy(file, src); err != nil {
+			log.Println("ERROR writing the file: ")
 			log.Print(err)
 			return err
 		}
@@ -135,6 +137,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, file *os.File) error {
 		reader := bar.ProxyReader(resp.Body)
 		mw := io.MultiWriter(file, prog)
 		if _, err = io.Copy(mw, reader); err != nil {
+			log.Println("ERROR writing the file: ")
 			log.Print(err)
 			return err
 		}
