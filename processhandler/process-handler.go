@@ -20,7 +20,7 @@ var (
 	mutex sync.RWMutex
 )
 
-func GetOrCreateProcessHandle(client client.Client, videoID string) <-chan models.ProgressUpdate {
+func GetOrCreateSubscription(client client.Client, videoID string) <-chan models.ProgressUpdate {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -44,7 +44,7 @@ func GetOrCreateProcessHandle(client client.Client, videoID string) <-chan model
 }
 
 func handleProcessing(videoID string, d *downloader.Downloader, f *feed.ProgressUpdateFeed) {
-	defer removeProcessHandler(videoID)
+	defer removeFeed(videoID)
 	defer f.Close()
 
 	ctx := context.Background()
@@ -90,7 +90,7 @@ func handleProcessing(videoID string, d *downloader.Downloader, f *feed.Progress
 	}
 }
 
-func removeProcessHandler(videoID string) {
+func removeFeed(videoID string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
