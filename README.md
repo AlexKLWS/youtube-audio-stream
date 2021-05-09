@@ -1,6 +1,9 @@
 # Youtube Audio Streamer
 
-A simple web service written in Go. As the name suggests, it's purpose is streaming audio from youtube videos. **For more info, please refer [here](https://longwintershadows.com/articles/4c92a655-4cea-43cc-8198-a7ea97b78abc).**
+A simple web service written in Go. As the name suggests, it's purpose is streaming audio from youtube videos. 
+👇👇👇👇
+**For more info, please refer [here](https://longwintershadows.com/articles/4c92a655-4cea-43cc-8198-a7ea97b78abc).**
+👆👆👆👆
 
 ### Building
 Compiling a binary is pretty straightforward. Run `go install` and `go build` to make a binary. Tested with go version **3.17**. 
